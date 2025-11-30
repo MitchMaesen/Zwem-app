@@ -1,50 +1,100 @@
 <!DOCTYPE html>
-<html>
+<html lang="nl">
 <head>
-  <base href="$FLUTTER_BASE_HREF">
-  <meta charset="UTF-8">
-  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="ZwemPrestaties app">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="ZwemPrestaties">
-  <link rel="apple-touch-icon" href="https://flutter.github.io/assets-for-pwa/manifest-icon-192.png">
-  <link rel="manifest" href="manifest.json">
-  <title>ZwemPrestaties</title>
-  <link rel="icon" type="image/png" href="favicon.png"/>
-  <script>
-    // The value below is injected by flutter build, do not touch.
-    var serviceWorkerVersion = null;
-  </script>
-  <!-- This script adds the flutter initialization JS code. -->
-  <script src="flutter.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZwemPrestaties</title>
+    <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiWnplbVByZXN0YXRpZXMiLCJzaG9ydF9uYW1lIjoiWnplbSIsInN0YXJ0X3VybCI6Ii8iLCJkaXNwbGF5IjoiZnVsbHNjcmVlbiIsImJhY2tncm91bmRfY29sb3IiOiIjRkZGRkZGIiwidGhlbWVfY29sb3IiOiIjMDAwMDAwIiwiaWNvbnMiOlt7InNyYyI6Imh0dHBzOi8vZmx1dHRlci5naXRodWIuaW8vYXNzZXRzLWZvci1wd2EvbWFuaWZlc3QtaWNvbi0xOTIucG5nIiwic2l6ZXMiOiIxOTJ4MTkyIiwidHlwZSI6ImltYWdlL3BuZyJ9XX0=">
+    <meta name="theme-color" content="#000000">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f0f8ff; }
+        .app { max-width: 400px; margin: 0 auto; padding: 20px; }
+        .header { background: #2196F3; color: white; padding: 20px; text-align: center; }
+        .list { list-style: none; padding: 0; }
+        .entry { background: white; margin: 10px 0; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .form { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-top: 20px; }
+        input, select, button { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        button { background: #2196F3; color: white; border: none; cursor: pointer; }
+        button:hover { background: #1976D2; }
+        .empty { text-align: center; color: #666; padding: 40px; }
+    </style>
 </head>
 <body>
-  <script>
-    window.addEventListener('load', function(ev) {
-      _flutter.loader.loadEntrypoint({
-        serviceWorker: {
-          serviceWorkerVersion: serviceWorkerVersion,
-        },
-        onEntrypointLoaded: function(engineInitializer) {
-          engineInitializer.initializeEngine().then(function(appRunner) {
-            appRunner.runApp();
-          });
+    <div class="app">
+        <div class="header">
+            <h1>🏊 ZwemPrestaties</h1>
+            <p>van je zoon</p>
+        </div>
+        <ul id="entriesList" class="list"></ul>
+        <div class="empty" id="emptyMsg">Nog geen tijden toegevoegd<br>Klik op + om te beginnen!</div>
+        <div class="form" id="form" style="display:none;">
+            <input type="date" id="datum" value="">
+            <select id="afstand">
+                <option value="50">50 m</option>
+                <option value="100" selected>100 m</option>
+                <option value="200">200 m</option>
+                <option value="400">400 m</option>
+            </select>
+            <select id="slag">
+                <option value="Vrije slag" selected>Vrije slag</option>
+                <option value="Rugslag">Rugslag</option>
+                <option value="Schoolslag">Schoolslag</option>
+                <option value="Vlinderslag">Vlinderslag</option>
+                <option value="Wisselslag">Wisselslag</option>
+            </select>
+            <input type="text" id="tijd" placeholder="Tijd (bijv. 1:23.45)">
+            <select id="soort">
+                <option value="Training" selected>Training</option>
+                <option value="Wedstrijd">Wedstrijd</option>
+            </select>
+            <input type="text" id="opmerkingen" placeholder="Opmerkingen (optioneel)">
+            <button onclick="saveEntry()">Opslaan</button>
+            <button onclick="cancelForm()" style="background: #f44336;">Annuleren</button>
+        </div>
+        <button onclick="showForm()" style="position:fixed; bottom:20px; right:20px; width:60px; height:60px; border-radius:50%; background:#2196F3; color:white; border:none; font-size:24px;">+</button>
+    </div>
+    <script>
+        let entries = JSON.parse(localStorage.getItem('zwemEntries')) || [];
+        function renderList() {
+            const list = document.getElementById('entriesList');
+            const empty = document.getElementById('emptyMsg');
+            list.innerHTML = '';
+            entries.forEach(e => {
+                const li = document.createElement('li');
+                li.className = 'entry';
+                li.innerHTML = `
+                    <strong>${e.afstand} m ${e.slag} – ${e.tijd}</strong><br>
+                    ${e.datum} • ${e.soort}${e.opmerkingen ? ' • ' + e.opmerkingen : ''}
+                    <span style="color:gold;">⭐</span>
+                `;
+                list.appendChild(li);
+            });
+            empty.style.display = entries.length ? 'none' : 'block';
         }
-      });
-    });
-  </script>
-  <!-- Flutter root detector -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', function () {
-        navigator.serviceWorker.register('flutter_service_worker.js?v=' + serviceWorkerVersion);
-      });
-    }
-  </script>
-  <script src="main.dart.js" defer></script>
-  <style>
-    html, body { background-color: #ffffff; }
-  </style>
+        function showForm() {
+            document.getElementById('form').style.display = 'block';
+            document.getElementById('datum').value = new Date().toISOString().split('T')[0];
+        }
+        function cancelForm() {
+            document.getElementById('form').style.display = 'none';
+            document.querySelectorAll('#form input, #form select').forEach(el => el.value = '');
+        }
+        function saveEntry() {
+            const datum = document.getElementById('datum').value;
+            const afstand = document.getElementById('afstand').value;
+            const slag = document.getElementById('slag').value;
+            const tijd = document.getElementById('tijd').value;
+            const soort = document.getElementById('soort').value;
+            const opmerkingen = document.getElementById('opmerkingen').value;
+            if (!tijd || !datum) return alert('Vul datum en tijd in!');
+            entries.unshift({datum, afstand, slag, tijd, soort, opmerkingen});
+            localStorage.setItem('zwemEntries', JSON.stringify(entries));
+            renderList();
+            cancelForm();
+        }
+        renderList();
+    </script>
 </body>
 </html>
